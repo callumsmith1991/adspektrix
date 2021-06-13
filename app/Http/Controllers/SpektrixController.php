@@ -16,7 +16,7 @@ class SpektrixController extends Controller
     public function __construct()
     {
         $this->client = new Client([
-            'base_uri' =>$this->apiUrl
+            'base_uri' => $this->apiUrl
         ]);
         $this->today = date('Y-m-d');
     }
