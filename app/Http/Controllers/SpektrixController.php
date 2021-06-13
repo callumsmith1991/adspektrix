@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use DateTime;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 
 class SpektrixController extends Controller
 {
@@ -14,9 +15,10 @@ class SpektrixController extends Controller
 
     public function __construct()
     {
-        $this->client = new Client();
+        $this->client = new Client([
+            'base_uri' =>$this->apiUrl
+        ]);
         $this->today = date('Y-m-d');
-
     }
 
     public function getEvents()
@@ -59,69 +61,70 @@ class SpektrixController extends Controller
     private function dateFormat(string $date)
     {
 
-        if(strpos($date, 'T') !== false) {
+        if (strpos($date, 'T') !== false) {
 
             $dateArr = explode('T', $date);
 
-            if(is_array($dateArr))
-            {
+            if (is_array($dateArr)) {
 
                 $dateTime = new DateTime($dateArr[0]);
                 return $dateTime->format('d/m/y');
-
             } else {
 
                 return false;
-
             }
-
         } else {
 
             return false;
-
         }
-
     }
 
     public function getAllEvents()
     {
 
-        return $this->get(''.$this->apiUrl.'events?instanceStart_from='.$this->today.'&onSale=true');
+        return $this->get('events?instanceStart_from=' . $this->today . '&onSale=true');
     }
 
     private function getEventInfoById(string $eventId)
     {
 
-        return $this->get(''.$this->apiUrl.'events/' . $eventId);
+        return $this->get('events/' . $eventId);
     }
 
     private function getEventInstances(string $eventId)
     {
 
-        return $this->get(''.$this->apiUrl.'events/' . $eventId . '/instances?start_from='.$this->today.'');
+        return $this->get('events/' . $eventId . '/instances?start_from=' . $this->today . '');
     }
 
     private function getInstancePricing(string $instanceId)
     {
 
-        return $this->get(''.$this->apiUrl.'instances/' . $instanceId . '/price-list');
+        return $this->get('instances/' . $instanceId . '/price-list');
     }
 
     private function getInstanceStatus(string $instanceId)
     {
 
-        return $this->get(''.$this->apiUrl.'instances/' . $instanceId . '/status');
+        return $this->get('instances/' . $instanceId . '/status');
     }
 
     protected function get(string $endpoint)
     {
 
-        $request = $this->client->request('GET', $endpoint);
+        try {
 
-        $response = $request->getBody();
+            $request = $this->client->request('GET', $endpoint);
+            $response = $request->getBody();
+            $data = json_decode($response, TRUE);
+            return $data;
 
-        $data = json_decode($response, TRUE);
+        } catch (RequestException $e) {
 
-        return $data;
+            $error = $e->getMessage();
+            dd($error);
+        }
+
+       
     }
 }
